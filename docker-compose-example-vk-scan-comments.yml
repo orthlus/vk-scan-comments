@@ -1,0 +1,16 @@
+version: '3.1'
+
+services:
+  yana-vk-scan-comments:
+    image: yana-vk-scan-comments:latest
+    restart: always
+    environment:
+      BOT_TOKEN:
+      BOT_NICKNAME:
+      ADMIN_TELEGRAM_ID:
+      TELEGRAM_CHANNEL_ID:
+      VK_ADD_ID:
+      VK_SECRET_KEY:
+      VK_GROUPS_IDS: -22822305, -22822306
+      SCANNING_CRON: 0 0/5 * * * ?
+      VK_API_DELAY: 50

@@ -1,0 +1,6 @@
+.idea
+target
+docker*.yml
+!docker-compose-example*.yml
+deploy.bat
+application.properties
