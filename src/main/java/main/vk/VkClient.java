@@ -161,7 +161,7 @@ public class VkClient {
 					.sort(WallSort.REVERSE_CHRONOLOGICAL)
 					.needLikes(false)
 					.previewLength(0);
-			int countComments = vkApi.call(querySupp.get().count(1)).getCount();
+
 			int upperCommentsCount = vkApi.call(querySupp.get().count(1)).getCurrentLevelCount();
 			Set<WallComment> result = fetchCommentsWithOffset(vkApi, querySupp, 0);
 
