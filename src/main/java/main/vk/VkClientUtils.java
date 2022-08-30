@@ -66,7 +66,7 @@ public class VkClientUtils {
 	}
 
 	private static String getStickerUrl(List<CommentAttachment> attachments) {
-		int imageSideLength = 256;
+		int imageSideLength = 128;
 		List<Image> images = attachments.get(0)
 				.getSticker().getImages();
 		Image result = images.stream()
