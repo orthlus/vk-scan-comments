@@ -172,13 +172,9 @@ public class VkClient {
 			Set<Comment> r = convertComments(filteredResult);
 			log.debug("finish getNewCommentsByPostId, group {}, result {} comments", groupId, filteredResult.size());
 			return r;
-		} catch (ApiAccessException e) {
-			if (e.getMessage().contains("post was deleted")) {
-				log.error("Error getNewCommentsByPostId - post was deleted, group id {}, post {}", groupId, wallPostId);
-				throw new VkPostWasDeletedException();
-			}
-			log.error("Error getNewCommentsByPostId (ApiAccessException), group id {}, post {}", groupId, wallPostId, e);
-			return Set.of();
+		} catch (VkPostWasDeletedException e) {
+			log.error("Error getNewCommentsByPostId - post was deleted, group id {}, post {}", groupId, wallPostId);
+			throw new VkPostWasDeletedException();
 		} catch (ApiException | ClientException e) {
 			log.error("Error getNewCommentsByPostId, group id {}, post {}", groupId, wallPostId, e);
 			return Set.of();
@@ -202,20 +198,31 @@ public class VkClient {
 			int s = result.stream().mapToInt(WallComment::getId).max().orElse(1);
 			log.debug("finish getMaxCommentIdByPostId, group {}, result {}", groupId, s);
 			return s;
+		} catch (VkPostWasDeletedException ignored) {
+			log.error("Error getMaxCommentIdByPostId - post was deleted, group id {}, post {}", groupId, wallPostId);
 		} catch (ApiException | ClientException e) {
 			log.error("Error getMaxCommentIdByPostId, group id {}, post {}", groupId, wallPostId, e);
-			return 1;
 		}
+		return 1;
 	}
 
-	private Set<WallComment> fetchCommentsByPostId(Supplier<WallGetCommentsQuery> querySupp) throws ClientException, ApiException {
-		int upperCommentsCount = vkApi.call(querySupp.get().count(1)).getCurrentLevelCount();
-		Set<WallComment> result = fetchCommentsWithOffset(vkApi, querySupp, 0);
+	private Set<WallComment> fetchCommentsByPostId(Supplier<WallGetCommentsQuery> querySupp)
+			throws ClientException, ApiException, VkPostWasDeletedException {
+		Set<WallComment> result = null;
+		try {
+			result = fetchCommentsWithOffset(vkApi, querySupp, 0);
+			int upperCommentsCount = vkApi.call(querySupp.get().count(1)).getCurrentLevelCount();
 
-		while (!result.isEmpty() && result.size() < upperCommentsCount) {
-			result.addAll(fetchCommentsWithOffset(vkApi, querySupp, result.size()));
+			while (!result.isEmpty() && result.size() < upperCommentsCount) {
+				result.addAll(fetchCommentsWithOffset(vkApi, querySupp, result.size()));
+			}
+			result.addAll(extractThread(vkApi, result, querySupp));
+		} catch (ApiAccessException e) {
+			if (e.getMessage().contains("post was deleted")) {
+				log.error("Error fetchCommentsByPostId - post was deleted");
+				throw new VkPostWasDeletedException();
+			}
 		}
-		result.addAll(extractThread(vkApi, result, querySupp));
 		return result;
 	}
 
