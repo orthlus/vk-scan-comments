@@ -62,26 +62,27 @@ public class VkClient {
 		if (comments == null || comments.isEmpty()) return comments;
 		log.debug("start fillUsersNames with {} comments", comments.size());
 		try {
-			List<String> userIds = new ArrayList<>(comments.size());
-			List<String> groupIds = new LinkedList<>();
+			List<Integer> userIds = new ArrayList<>(comments.size());
+			List<Integer> groupIds = new LinkedList<>();
 			for (Integer fromId : comments.stream().map(Comment::getFromId).collect(Collectors.toSet())) {
 				if (fromId > 0)
-					userIds.add(String.valueOf(fromId));
+					userIds.add(fromId);
 				else
-					groupIds.add(String.valueOf(- fromId));
+					groupIds.add(Math.abs(fromId));
 			}
 
 			List<com.vk.api.sdk.objects.users.responses.GetResponse> users = new LinkedList<>();
 			if (userIds.size() > 0) {
-				if (userIds.size() < 1000) {
-					String join = String.join(",", userIds);
+				List<String> userIdsStrings = ints2Strings(userIds);
+				if (userIdsStrings.size() < 1000) {
+					String join = String.join(",", userIdsStrings);
 					users.addAll(vkApi.call(vk.users()
 							.get(getServiceActor())
 							.lang(Lang.RU)
 							.userIds(join)));
 				} else {
-					for (int step = 0; step < userIds.size(); step += 1000) {
-						String join = String.join(",", userIds.subList(step, step + 1000));
+					for (int step = 0; step < userIdsStrings.size(); step += 1000) {
+						String join = String.join(",", userIdsStrings.subList(step, step + 1000));
 						users.addAll(vkApi.call(vk.users()
 								.get(getServiceActor())
 								.lang(Lang.RU)
@@ -93,15 +94,16 @@ public class VkClient {
 
 			List<GetByIdLegacyResponse> groups = new LinkedList<>();
 			if (groupIds.size() > 0) {
-				if (groupIds.size() < 500) {
-					String join = String.join(",", groupIds);
+				List<String> groupIdsStrings = ints2Strings(groupIds);
+				if (groupIdsStrings.size() < 500) {
+					String join = String.join(",", groupIdsStrings);
 					groups.addAll(vkApi.call(vk.groups()
 							.getByIdLegacy(getServiceActor())
 							.lang(Lang.RU)
 							.groupIds(join)));
 				} else {
-					for (int step = 0; step < groupIds.size(); step += 500) {
-						String join = String.join(",", groupIds.subList(step, step + 500));
+					for (int step = 0; step < groupIdsStrings.size(); step += 500) {
+						String join = String.join(",", groupIdsStrings.subList(step, step + 500));
 						groups.addAll(vkApi.call(vk.groups()
 								.getByIdLegacy(getServiceActor())
 								.lang(Lang.RU)
@@ -140,6 +142,12 @@ public class VkClient {
 			log.error("Error fillUsersNames", e);
 		}
 		return comments;
+	}
+
+	private List<String> ints2Strings(List<Integer> ints) {
+		return ints.stream()
+				.map(String::valueOf)
+				.toList();
 	}
 
 	public Set<Comment> getNewCommentsByPostId(int groupId, int wallPostId, int lastCommentId) {
