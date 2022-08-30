@@ -3,6 +3,7 @@ package main.vk;
 import com.vk.api.sdk.client.Lang;
 import com.vk.api.sdk.client.VkApiClient;
 import com.vk.api.sdk.client.actors.ServiceActor;
+import com.vk.api.sdk.exceptions.ApiAccessException;
 import com.vk.api.sdk.exceptions.ApiException;
 import com.vk.api.sdk.exceptions.ClientException;
 import com.vk.api.sdk.httpclient.HttpTransportClient;
@@ -16,6 +17,7 @@ import com.vk.api.sdk.queries.wall.WallGetCommentsQuery;
 import com.vk.api.sdk.queries.wall.WallGetQuery;
 import lombok.extern.slf4j.Slf4j;
 import main.dto.Comment;
+import main.exceptions.VkPostWasDeletedException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -150,7 +152,7 @@ public class VkClient {
 				.toList();
 	}
 
-	public Set<Comment> getNewCommentsByPostId(int groupId, int wallPostId, int lastCommentId) {
+	public Set<Comment> getNewCommentsByPostId(int groupId, int wallPostId, int lastCommentId) throws VkPostWasDeletedException {
 		log.debug("start getNewCommentsByPostId, group {} post {} last post {}", groupId, wallPostId, lastCommentId);
 		try {
 			Supplier<WallGetCommentsQuery> querySupp = () -> vk.wall()
@@ -176,6 +178,13 @@ public class VkClient {
 			Set<Comment> r = convertComments(filteredResult);
 			log.debug("finish getNewCommentsByPostId, group {}, result {} comments", groupId, filteredResult.size());
 			return r;
+		} catch (ApiAccessException e) {
+			if (e.getMessage().contains("post was deleted")) {
+				log.error("Error getNewCommentsByPostId - post was deleted, group id {}, post {}", groupId, wallPostId);
+				throw new VkPostWasDeletedException();
+			}
+			log.error("Error getNewCommentsByPostId (ApiAccessException), group id {}, post {}", groupId, wallPostId, e);
+			return Set.of();
 		} catch (ApiException | ClientException e) {
 			log.error("Error getNewCommentsByPostId, group id {}, post {}", groupId, wallPostId, e);
 			return Set.of();

@@ -6,6 +6,7 @@ import main.TelegramMessageSender;
 import main.dto.Comment;
 import main.dto.CommentsSource;
 import main.dto.TelegramMessage;
+import main.exceptions.VkPostWasDeletedException;
 import main.vk.VkClient;
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.Job;
@@ -77,7 +78,12 @@ public class SendNewCommentsJob implements Job {
 
 	private List<TelegramMessage> getTelegramMessagesFromPost(int postId, CommentsSource group, Set<Comment> allNewComments) {
 		List<TelegramMessage> result = new LinkedList<>();
-		Set<Comment> newComments = vkClient.getNewCommentsByPostId(group.getGroupId(), postId, group.getLastCommentId());
+		Set<Comment> newComments = null;
+		try {
+			newComments = vkClient.getNewCommentsByPostId(group.getGroupId(), postId, group.getLastCommentId());
+		} catch (VkPostWasDeletedException e) {
+			group.getPosts().remove(postId);
+		}
 		newComments = vkClient.fillUsersNames(newComments);
 		for (Comment comment : newComments) {
 			result.add(makeTelegramMessage(comment, postId, group));
