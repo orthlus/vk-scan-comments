@@ -22,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -39,6 +40,13 @@ public class VkClient {
 	@Value("${VK_SECRET_KEY}")
 	private String vkToken;
 
+	private ServiceActor serviceActor;
+
+	@PostConstruct
+	private void init() {
+		serviceActor = new ServiceActor(vkAppId, vkToken);
+	}
+
 	@Autowired
 	private VkApiWrapper vkApi;
 
@@ -49,7 +57,7 @@ public class VkClient {
 		try {
 			String id = String.valueOf(Math.abs(Integer.parseInt(groupId)));
 			List<GetByIdLegacyResponse> response = vkApi.call(vk.groups()
-					.getByIdLegacy(getServiceActor())
+					.getByIdLegacy(serviceActor)
 					.groupId(id));
 			String name = response.get(0).getName();
 			log.info("finish getGroupName with group {}, name {}", groupId, name);
@@ -79,14 +87,14 @@ public class VkClient {
 				if (userIdsStrings.size() < 1000) {
 					String join = String.join(",", userIdsStrings);
 					users.addAll(vkApi.call(vk.users()
-							.get(getServiceActor())
+							.get(serviceActor)
 							.lang(Lang.RU)
 							.userIds(join)));
 				} else {
 					for (int step = 0; step < userIdsStrings.size(); step += 1000) {
 						String join = String.join(",", userIdsStrings.subList(step, step + 1000));
 						users.addAll(vkApi.call(vk.users()
-								.get(getServiceActor())
+								.get(serviceActor)
 								.lang(Lang.RU)
 								.userIds(join)));
 					}
@@ -100,14 +108,14 @@ public class VkClient {
 				if (groupIdsStrings.size() < 500) {
 					String join = String.join(",", groupIdsStrings);
 					groups.addAll(vkApi.call(vk.groups()
-							.getByIdLegacy(getServiceActor())
+							.getByIdLegacy(serviceActor)
 							.lang(Lang.RU)
 							.groupIds(join)));
 				} else {
 					for (int step = 0; step < groupIdsStrings.size(); step += 500) {
 						String join = String.join(",", groupIdsStrings.subList(step, step + 500));
 						groups.addAll(vkApi.call(vk.groups()
-								.getByIdLegacy(getServiceActor())
+								.getByIdLegacy(serviceActor)
 								.lang(Lang.RU)
 								.groupIds(join)));
 					}
@@ -156,7 +164,7 @@ public class VkClient {
 		log.debug("start getNewCommentsByPostId, group {} post {} last post {}", groupId, wallPostId, lastCommentId);
 		try {
 			Supplier<WallGetCommentsQuery> querySupp = () -> vk.wall()
-					.getComments(getServiceActor())
+					.getComments(serviceActor)
 					.ownerId(groupId)
 					.postId(wallPostId)
 					.count(100)
@@ -185,7 +193,7 @@ public class VkClient {
 		log.debug("start getMaxCommentIdByPostId, group {} post {}", groupId, wallPostId);
 		try {
 			Supplier<WallGetCommentsQuery> querySupp = () -> vk.wall()
-					.getComments(getServiceActor())
+					.getComments(serviceActor)
 					.ownerId(groupId)
 					.postId(wallPostId)
 					.count(100)
@@ -231,7 +239,7 @@ public class VkClient {
 		log.info("start getAllCommentsByPostId, group {} post {}", groupId, wallPostId);
 		try {
 			Supplier<WallGetCommentsQuery> querySupp = () -> vk.wall()
-					.getComments(getServiceActor())
+					.getComments(serviceActor)
 					.ownerId(groupId)
 					.postId(wallPostId)
 					.count(100)
@@ -258,7 +266,7 @@ public class VkClient {
 		log.debug("start getNewPostsIdsByGroupId, group {}, last post {}", groupId, lastPostId);
 		try {
 			Supplier<WallGetQuery> query = () -> vk.wall()
-					.get(getServiceActor())
+					.get(serviceActor)
 					.ownerId(groupId)
 					.count(100);
 			GetResponse response = vkApi.call(query.get());
@@ -290,7 +298,7 @@ public class VkClient {
 		log.info("start getNLastPostsByGroupId, group {}, {} posts", groupId, countPosts);
 		try {
 			Supplier<WallGetQuery> querySupp = () -> vk.wall()
-					.get(getServiceActor())
+					.get(serviceActor)
 					.ownerId(groupId)
 					.count(100);
 			GetResponse response = vkApi.call(querySupp.get());
@@ -321,9 +329,5 @@ public class VkClient {
 			log.error("Error getNLastPostsByGroupId, group id {}", groupId, e);
 			return Set.of();
 		}
-	}
-
-	private ServiceActor getServiceActor() {
-		return new ServiceActor(vkAppId, vkToken);
 	}
 }
