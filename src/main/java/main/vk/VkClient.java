@@ -164,13 +164,7 @@ public class VkClient {
 					.needLikes(false)
 					.previewLength(0);
 
-			int upperCommentsCount = vkApi.call(querySupp.get().count(1)).getCurrentLevelCount();
-			Set<WallComment> result = fetchCommentsWithOffset(vkApi, querySupp, 0);
-
-			while (!result.isEmpty() && result.size() < upperCommentsCount) {
-				result.addAll(fetchCommentsWithOffset(vkApi, querySupp, result.size()));
-			}
-			result.addAll(extractThread(vkApi, result, querySupp));
+			Set<WallComment> result = fetchCommentsByPostId(querySupp);
 
 			Set<WallComment> filteredResult = result.stream()
 					.filter(comment -> comment.getId() > lastCommentId)
@@ -203,13 +197,7 @@ public class VkClient {
 					.needLikes(false)
 					.previewLength(0);
 
-			int upperCommentsCount = vkApi.call(querySupp.get().count(1)).getCurrentLevelCount();
-			Set<WallComment> result = fetchCommentsWithOffset(vkApi, querySupp, 0);
-
-			while (!result.isEmpty() && result.size() < upperCommentsCount) {
-				result.addAll(fetchCommentsWithOffset(vkApi, querySupp, result.size()));
-			}
-			result.addAll(extractThread(vkApi, result, querySupp));
+			Set<WallComment> result = fetchCommentsByPostId(querySupp);
 
 			int s = result.stream().mapToInt(WallComment::getId).max().orElse(1);
 			log.debug("finish getMaxCommentIdByPostId, group {}, result {}", groupId, s);
@@ -218,6 +206,17 @@ public class VkClient {
 			log.error("Error getMaxCommentIdByPostId, group id {}, post {}", groupId, wallPostId, e);
 			return 1;
 		}
+	}
+
+	private Set<WallComment> fetchCommentsByPostId(Supplier<WallGetCommentsQuery> querySupp) throws ClientException, ApiException {
+		int upperCommentsCount = vkApi.call(querySupp.get().count(1)).getCurrentLevelCount();
+		Set<WallComment> result = fetchCommentsWithOffset(vkApi, querySupp, 0);
+
+		while (!result.isEmpty() && result.size() < upperCommentsCount) {
+			result.addAll(fetchCommentsWithOffset(vkApi, querySupp, result.size()));
+		}
+		result.addAll(extractThread(vkApi, result, querySupp));
+		return result;
 	}
 
 	@Deprecated
