@@ -1,5 +1,6 @@
 package main.vk;
 
+import com.google.common.collect.Iterables;
 import com.vk.api.sdk.client.Lang;
 import com.vk.api.sdk.client.VkApiClient;
 import com.vk.api.sdk.client.actors.ServiceActor;
@@ -23,10 +24,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -35,16 +33,22 @@ import static main.vk.VkClientUtils.*;
 @Component
 @Slf4j
 public class VkClient {
-	@Value("${VK_ADD_ID}")
-	private int vkAppId;
-	@Value("${VK_SECRET_KEY}")
-	private String vkToken;
+	@Value("${VK_ADD_IDS}")
+	private String vkAppIds;
+	@Value("${VK_SECRET_KEYS}")
+	private String vkTokens;
 
-	private ServiceActor serviceActor;
+	private Iterator<ServiceActor> keys;
 
 	@PostConstruct
 	private void init() {
-		serviceActor = new ServiceActor(vkAppId, vkToken);
+		List<ServiceActor> listKeys = new LinkedList<>();
+		String[] ids = vkAppIds.split(",");
+		String[] tokens = vkTokens.split(",");
+		for (int i = 0; i < Math.min(ids.length, tokens.length); i++) {
+			listKeys.add(new ServiceActor(Integer.parseInt(ids[i]), tokens[i]));
+		}
+		keys = Iterables.cycle(listKeys).iterator();
 	}
 
 	@Autowired
@@ -57,7 +61,7 @@ public class VkClient {
 		try {
 			String id = String.valueOf(Math.abs(Integer.parseInt(groupId)));
 			List<GetByIdLegacyResponse> response = vkApi.call(vk.groups()
-					.getByIdLegacy(serviceActor)
+					.getByIdLegacy(keys.next())
 					.groupId(id));
 			String name = response.get(0).getName();
 			log.info("finish getGroupName with group {}, name {}", groupId, name);
@@ -87,14 +91,14 @@ public class VkClient {
 				if (userIdsStrings.size() < 1000) {
 					String join = String.join(",", userIdsStrings);
 					users.addAll(vkApi.call(vk.users()
-							.get(serviceActor)
+							.get(keys.next())
 							.lang(Lang.RU)
 							.userIds(join)));
 				} else {
 					for (int step = 0; step < userIdsStrings.size(); step += 1000) {
 						String join = String.join(",", userIdsStrings.subList(step, step + 1000));
 						users.addAll(vkApi.call(vk.users()
-								.get(serviceActor)
+								.get(keys.next())
 								.lang(Lang.RU)
 								.userIds(join)));
 					}
@@ -108,14 +112,14 @@ public class VkClient {
 				if (groupIdsStrings.size() < 500) {
 					String join = String.join(",", groupIdsStrings);
 					groups.addAll(vkApi.call(vk.groups()
-							.getByIdLegacy(serviceActor)
+							.getByIdLegacy(keys.next())
 							.lang(Lang.RU)
 							.groupIds(join)));
 				} else {
 					for (int step = 0; step < groupIdsStrings.size(); step += 500) {
 						String join = String.join(",", groupIdsStrings.subList(step, step + 500));
 						groups.addAll(vkApi.call(vk.groups()
-								.getByIdLegacy(serviceActor)
+								.getByIdLegacy(keys.next())
 								.lang(Lang.RU)
 								.groupIds(join)));
 					}
@@ -154,17 +158,11 @@ public class VkClient {
 		return comments;
 	}
 
-	private List<String> ints2Strings(List<Integer> ints) {
-		return ints.stream()
-				.map(String::valueOf)
-				.toList();
-	}
-
 	public Set<Comment> getNewCommentsByPostId(int groupId, int wallPostId, int lastCommentId) throws VkPostWasDeletedException {
 		log.debug("start getNewCommentsByPostId, group {} post {} last post {}", groupId, wallPostId, lastCommentId);
 		try {
 			Supplier<WallGetCommentsQuery> querySupp = () -> vk.wall()
-					.getComments(serviceActor)
+					.getComments(keys.next())
 					.ownerId(groupId)
 					.postId(wallPostId)
 					.count(100)
@@ -193,7 +191,7 @@ public class VkClient {
 		log.debug("start getMaxCommentIdByPostId, group {} post {}", groupId, wallPostId);
 		try {
 			Supplier<WallGetCommentsQuery> querySupp = () -> vk.wall()
-					.getComments(serviceActor)
+					.getComments(keys.next())
 					.ownerId(groupId)
 					.postId(wallPostId)
 					.count(100)
@@ -239,7 +237,7 @@ public class VkClient {
 		log.info("start getAllCommentsByPostId, group {} post {}", groupId, wallPostId);
 		try {
 			Supplier<WallGetCommentsQuery> querySupp = () -> vk.wall()
-					.getComments(serviceActor)
+					.getComments(keys.next())
 					.ownerId(groupId)
 					.postId(wallPostId)
 					.count(100)
@@ -266,7 +264,7 @@ public class VkClient {
 		log.debug("start getNewPostsIdsByGroupId, group {}, last post {}", groupId, lastPostId);
 		try {
 			Supplier<WallGetQuery> query = () -> vk.wall()
-					.get(serviceActor)
+					.get(keys.next())
 					.ownerId(groupId)
 					.count(100);
 			GetResponse response = vkApi.call(query.get());
@@ -298,7 +296,7 @@ public class VkClient {
 		log.info("start getNLastPostsByGroupId, group {}, {} posts", groupId, countPosts);
 		try {
 			Supplier<WallGetQuery> querySupp = () -> vk.wall()
-					.get(serviceActor)
+					.get(keys.next())
 					.ownerId(groupId)
 					.count(100);
 			GetResponse response = vkApi.call(querySupp.get());

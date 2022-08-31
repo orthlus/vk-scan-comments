@@ -111,4 +111,10 @@ public class VkClientUtils {
 
 		return result;
 	}
+
+	static List<String> ints2Strings(List<Integer> ints) {
+		return ints.stream()
+				.map(String::valueOf)
+				.toList();
+	}
 }
