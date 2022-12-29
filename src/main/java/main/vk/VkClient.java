@@ -33,9 +33,9 @@ import static main.vk.VkClientUtils.*;
 @Component
 @Slf4j
 public class VkClient {
-	@Value("${VK_ADD_IDS}")
+	@Value("${vk.app_ids}")
 	private String vkAppIds;
-	@Value("${VK_SECRET_KEYS}")
+	@Value("${vk.secret_keys}")
 	private String vkTokens;
 
 	private Iterator<ServiceActor> keys;

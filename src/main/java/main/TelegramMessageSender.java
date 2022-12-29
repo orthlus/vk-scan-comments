@@ -20,13 +20,13 @@ import java.util.List;
 @Slf4j
 @Component
 public class TelegramMessageSender extends TelegramLongPollingBot {
-	@Value("${BOT_NICKNAME}")
+	@Value("${telegram.bot.nickname}")
 	private String botNickname;
-	@Value("${BOT_TOKEN}")
+	@Value("${telegram.bot.token}")
 	private String botToken;
-	@Value("${ADMIN_TELEGRAM_ID}")
+	@Value("${telegram.admin_id}")
 	private String adminId;
-	@Value("${TELEGRAM_CHANNEL_ID}")
+	@Value("${telegram.channel_id}")
 	private String channelId;
 
 	public void sendAdminMessage(String message) {

@@ -12,7 +12,7 @@ import java.util.TimeZone;
 
 @Configuration
 public class QuartzConfig {
-	@Value("${SCANNING_CRON}")
+	@Value("${scanning_cron}")
 	private String cronExpression;
 	private static final TimeZone TZ = TimeZone.getTimeZone(ZoneId.of("Europe/Moscow"));
 

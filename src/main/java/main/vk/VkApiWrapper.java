@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class VkApiWrapper {
-	@Value("${VK_API_DELAY}")
+	@Value("${vk_api_delay}")
 	private long apiDelayMilliseconds;
 
 	private <T, R> R tryRequest(AbstractQueryBuilder<T, R> req) throws ClientException, ApiException {
