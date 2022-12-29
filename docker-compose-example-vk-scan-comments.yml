@@ -1,8 +1,8 @@
 version: '3.1'
 
 services:
-  yana-vk-scan-comments:
-    image: yana-vk-scan-comments:latest
+  vk-scan-comments:
+    image: vk-scan-comments:latest
     restart: always
     environment:
       BOT_TOKEN:
