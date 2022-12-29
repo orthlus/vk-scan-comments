@@ -1,0 +1,4 @@
+SET SEARCH_PATH TO 'vk_scan';
+INSERT INTO groups (id)
+VALUES (-22822305),
+       (-22822306);

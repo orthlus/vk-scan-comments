@@ -56,10 +56,10 @@ public class VkClient {
 
 	private final VkApiClient vk = new VkApiClient(HttpTransportClient.getInstance());
 
-	public String getGroupName(String groupId) {
+	public String getGroupName(int groupId) {
 		log.debug("start getGroupName with group {}", groupId);
 		try {
-			String id = String.valueOf(Math.abs(Integer.parseInt(groupId)));
+			String id = String.valueOf(Math.abs(groupId));
 			List<GetByIdLegacyResponse> response = vkApi.call(vk.groups()
 					.getByIdLegacy(keys.next())
 					.groupId(id));
