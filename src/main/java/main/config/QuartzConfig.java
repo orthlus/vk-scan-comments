@@ -1,4 +1,4 @@
-package main;
+package main.config;
 
 import main.shedule.SendNewCommentsJob;
 import org.quartz.*;
@@ -17,16 +17,12 @@ public class QuartzConfig {
 	private static final TimeZone TZ = TimeZone.getTimeZone(ZoneId.of("Europe/Moscow"));
 
 	@Bean
-	public JobDetail jobDetail() {
-		return JobBuilder.newJob()
+	public Scheduler scheduler(SchedulerFactoryBean factory)
+			throws SchedulerException {
+		JobDetail jobDetail = JobBuilder.newJob()
 				.storeDurably()
 				.ofType(SendNewCommentsJob.class)
 				.build();
-	}
-
-	@Bean
-	public Scheduler scheduler(JobDetail jobDetail, SchedulerFactoryBean factory)
-			throws SchedulerException {
 		CronScheduleBuilder cronScheduleBuilder = CronScheduleBuilder
 				.cronSchedule(cronExpression)
 				.inTimeZone(TZ);
