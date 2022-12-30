@@ -7,6 +7,8 @@ import com.vk.api.sdk.exceptions.ClientException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.util.concurrent.TimeUnit;
+
 @Component
 public class VkApiWrapper {
 	@Value("${vk_api_delay}")
@@ -18,7 +20,7 @@ public class VkApiWrapper {
 				return req.execute();
 			} catch (ApiTooManyException e) {
 				try {
-					Thread.sleep(apiDelayMilliseconds);
+					TimeUnit.MILLISECONDS.sleep(apiDelayMilliseconds);
 				} catch (InterruptedException ex) {
 					throw new RuntimeException(ex);
 				}
